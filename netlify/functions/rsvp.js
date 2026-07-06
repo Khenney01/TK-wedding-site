@@ -50,7 +50,25 @@ exports.handler = async (event) => {
       };
     }
 
-    const store = getStore("used-invite-codes");
+    // Netlify's automatic Blobs auto-configuration isn't kicking in on this site,
+    // so we pass the credentials explicitly via environment variables instead.
+    // These must be set in Netlify: Site settings -> Environment variables ->
+    // BLOBS_SITE_ID and BLOBS_TOKEN (see deployment notes for how to get them).
+    if (!process.env.BLOBS_SITE_ID || !process.env.BLOBS_TOKEN) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "blobs_env_missing",
+          message: "Server misconfiguration: BLOBS_SITE_ID / BLOBS_TOKEN environment variables are not set.",
+        })
+      };
+    }
+
+    const store = getStore({
+      name: "used-invite-codes",
+      siteID: process.env.BLOBS_SITE_ID,
+      token: process.env.BLOBS_TOKEN
+    });
     const existing = await store.get(code);
 
     if (existing) {
